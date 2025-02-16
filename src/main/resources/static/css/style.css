@@ -2,57 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom component styles */
-@layer components {
-    .form-input {
-        @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors;
-    }
+/* Custom styles can be added below */
 
-    .btn-primary {
-        @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200;
-    }
-
-    .btn-secondary {
-        @apply inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200;
-    }
-
-    .card {
-        @apply bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden;
-    }
-
-    .card-header {
-        @apply px-6 py-4 border-b border-gray-200;
-    }
-
-    .card-content {
-        @apply p-6;
-    }
+.btn-primary {
+    @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200;
 }
 
-/* SimpleMDE customization */
-.CodeMirror {
-    @apply rounded-lg border border-gray-300 !important;
-    height: 300px !important;
+.btn-secondary {
+    @apply bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200;
 }
 
-.editor-toolbar {
-    @apply border border-gray-300 rounded-t-lg !important;
+.form-control {
+    @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline;
 }
 
-/* Prose styles for markdown rendering */
+.form-control-file {
+    @apply py-2; /* Adjust vertical padding for file input */
+}
+
+.list-group-item {
+    @apply border-b border-gray-200 last:border-b-0; /* Example for list item borders, customize as needed */
+}
+
+.pagination .page-item.disabled .page-link {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+.pagination .page-item .page-link {
+    @apply bg-white border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 py-2 px-3 transition-colors duration-150;
+}
+
+.pagination .page-item:not(:disabled) .page-link:focus {
+    @apply outline-none ring-2 ring-blue-500; /* Focus ring, customize color if needed */
+}
+
+.pagination .page-item:first-child .page-link {
+    @apply rounded-l-md; /* Rounded left for first item */
+}
+
+.pagination .page-item:last-child .page-link {
+    @apply rounded-r-md; /* Rounded right for last item */
+}
+
+/* Prose styles for markdown rendering - you can customize these further */
 .prose {
-    @apply max-w-none;
+    max-width: none; /* Override default max-width of prose class if needed */
 }
-
-.prose h1 {
-    @apply text-2xl font-bold text-gray-900 mb-4;
-}
-
-.prose h2 {
-    @apply text-xl font-semibold text-gray-900 mb-3;
-}
-
-.prose p {
-    @apply text-gray-700 mb-4;
-}
-

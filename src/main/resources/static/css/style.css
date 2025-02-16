@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles can be added below */
+
+.btn-primary {
+    @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200;
+}
+
+.btn-secondary {
+    @apply bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200;
+}
+
+.form-control {
+    @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline;
+}
+
+.form-control-file {
+    @apply py-2; /* Adjust vertical padding for file input */
+}
+
+.list-group-item {
+    @apply border-b border-gray-200 last:border-b-0; /* Example for list item borders, customize as needed */
+}
+
+.pagination .page-item.disabled .page-link {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+.pagination .page-item .page-link {
+    @apply bg-white border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 py-2 px-3 transition-colors duration-150;
+}
+
+.pagination .page-item:not(:disabled) .page-link:focus {
+    @apply outline-none ring-2 ring-blue-500; /* Focus ring, customize color if needed */
+}
+
+.pagination .page-item:first-child .page-link {
+    @apply rounded-l-md; /* Rounded left for first item */
+}
+
+.pagination .page-item:last-child .page-link {
+    @apply rounded-r-md; /* Rounded right for last item */
+}
+
+/* Prose styles for markdown rendering - you can customize these further */
+.prose {
+    max-width: none; /* Override default max-width of prose class if needed */
+}

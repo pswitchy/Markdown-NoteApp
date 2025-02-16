@@ -267,3 +267,41 @@
     padding-left: 1rem;
     margin-bottom: 1rem;
 }
+
+/* Add these styles for SimpleMDE */
+.editor-toolbar {
+    opacity: 1 !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-bottom: none !important;
+}
+
+.editor-toolbar a {
+    color: #4a5568 !important;
+}
+
+.editor-toolbar a:hover,
+.editor-toolbar a.active {
+    background: #edf2f7 !important;
+    border-color: #cbd5e0 !important;
+}
+
+.CodeMirror {
+    border: 1px solid #e2e8f0 !important;
+    border-top: none !important;
+    min-height: 300px;
+}
+
+.editor-toolbar.fullscreen {
+    background: #fff !important;
+}
+
+.editor-preview {
+    background: #fff !important;
+    padding: 20px !important;
+}
+
+.editor-preview-side {
+    background: #fff !important;
+    border-left: 1px solid #e2e8f0 !important;
+}

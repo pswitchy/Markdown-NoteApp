@@ -2,81 +2,92 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-        <meta charset="UTF-8">
     <title>Markdown Notes</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/simplemde.min.css">
+    <!-- SimpleMDE CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Add Font Awesome for the editor icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         body {
             font-family: 'Nunito', sans-serif;
         }
+        /* Ensure proper editor height */
+        .editor-toolbar {
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+        .CodeMirror {
+            border: 1px solid #e2e8f0 !important;
+            min-height: 300px;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Markdown Note-taking App</h1> <!-- Increased margin-bottom on heading -->
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-10 text-center">Markdown Note-taking App</h1>
 
-    <div class="flex justify-between items-center mb-8 px-2 md:px-0"> <!-- Increased margin-bottom and added horizontal padding on smaller screens -->
+    <div class="flex justify-between items-center mb-10 px-2 sm:px-0">
         <h2 class="text-2xl font-semibold text-gray-700">Create New Note</h2>
         <a th:href="@{/logout}" class="note-btn note-btn-secondary">Logout</a>
     </div>
 
-    <div id="success-message" class="bg-green-200 text-green-800 px-4 py-2 rounded mb-6 hidden transition-opacity duration-300 opacity-0"> <!-- Increased margin-bottom on success message -->
+    <div id="success-message" class="bg-green-200 text-green-800 px-6 py-3 rounded mb-8 hidden transition-opacity duration-300 opacity-0">
         <!-- Success message will be placed here by JavaScript -->
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 px-2 md:px-0"> <!-- Increased gap and added horizontal padding on smaller screens -->
-        <div class="space-y-6"> <!-- Added vertical spacing between forms -->
-            <form th:action="@{/notes/save-text}" method="post" id="note-form-text" class="bg-white shadow-md rounded px-8 pt-8 pb-8"> <!-- Increased vertical padding in forms -->
-                <div class="mb-6"> <!-- Increased margin-bottom in form groups -->
-                    <label for="note-title" class="block text-gray-700 text-sm font-bold mb-2">Title:</label>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 px-2 sm:px-0">
+        <div class="space-y-8">
+            <form th:action="@{/notes/save-text}" method="post" id="note-form-text" class="bg-white shadow-md rounded-lg px-6 sm:px-8 py-8">
+                <div class="mb-6">
+                    <label for="note-title" class="block text-gray-700 text-sm font-bold mb-3">Title:</label>
                     <input type="text" class="form-control" id="note-title" name="title" placeholder="Enter note title" required>
                 </div>
                 <div class="mb-6">
-                    <label for="note-tags" class="block text-gray-700 text-sm font-bold mb-2">Tags (optional, comma-separated):</label>
+                    <label for="note-tags" class="block text-gray-700 text-sm font-bold mb-3">Tags (optional, comma-separated):</label>
                     <input type="text" class="form-control" id="note-tags" name="tags" placeholder="Tags">
                 </div>
-                <div class="mb-8"> <!-- Increased margin-bottom before button -->
-                    <label for="note-content" class="block text-gray-700 text-sm font-bold mb-2">Markdown Content:</label>
-                    <textarea class="form-control" id="note-content" name="content" rows="8" placeholder="Enter markdown content"></textarea>
+                <div class="mb-8">
+                    <label for="note-content" class="block text-gray-700 text-sm font-bold mb-3">Markdown Content:</label>
+                    <textarea class="form-control" id="note-content" name="content" placeholder="Enter markdown content"></textarea>
                 </div>
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-end">
                     <button type="submit" class="note-btn note-btn-primary">Save Note (Text)</button>
                 </div>
             </form>
 
-            <form th:action="@{/notes/save-file}" method="post" enctype="multipart/form-data" id="note-form-file" class="bg-white shadow-md rounded px-8 pt-8 pb-8"> <!-- Increased vertical padding in forms -->
+            <form th:action="@{/notes/save-file}" method="post" enctype="multipart/form-data" id="note-form-file" class="bg-white shadow-md rounded-lg px-6 sm:px-8 py-8">
                 <div class="mb-6">
-                    <label for="note-title-file" class="block text-gray-700 text-sm font-bold mb-2">Title:</label>
+                    <label for="note-title-file" class="block text-gray-700 text-sm font-bold mb-3">Title:</label>
                     <input type="text" class="form-control" id="note-title-file" name="title" placeholder="Note Title" required>
                 </div>
                 <div class="mb-6">
-                    <label for="note-tags-file" class="block text-gray-700 text-sm font-bold mb-2">Tags (optional, comma-separated):</label>
+                    <label for="note-tags-file" class="block text-gray-700 text-sm font-bold mb-3">Tags (optional, comma-separated):</label>
                     <input type="text" class="form-control" id="note-tags-file" name="tags" placeholder="Tags">
                 </div>
-                <div class="mb-8"> <!-- Increased margin-bottom before button -->
-                    <label for="note-file" class="block text-gray-700 text-sm font-bold mb-2">Upload Markdown File:</label>
+                <div class="mb-8">
+                    <label for="note-file" class="block text-gray-700 text-sm font-bold mb-3">Upload Markdown File:</label>
                     <input type="file" class="form-control-file" id="note-file" name="file" required>
                 </div>
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-end">
                     <button type="submit" class="note-btn note-btn-primary">Save Note (File)</button>
                 </div>
             </form>
         </div>
 
-        <div class="space-y-8"> <!-- Added vertical spacing between sections on right side -->
-            <section class="mb-6"> <!-- Reduced margin-bottom on section -->
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">List Notes</h2>
-                <div class="mb-4">
+        <div class="space-y-8">
+            <section>
+                <h2 class="text-2xl font-semibold text-gray-700 mb-6">List Notes</h2>
+                <div class="mb-6">
                     <input type="text" class="form-control" id="search-term" placeholder="Search notes" oninput="searchNotes()">
                 </div>
-                <ul class="list-group shadow-sm rounded bg-white overflow-hidden" id="notes-list">
+                <ul class="list-group shadow-md rounded-lg bg-white overflow-hidden" id="notes-list">
                     <!-- Notes will be listed here -->
                 </ul>
-                <nav aria-label="Note pagination" class="pagination mt-4">
-                    <ul class="pagination flex justify-center gap-1">
+                <nav aria-label="Note pagination" class="mt-6">
+                    <ul class="pagination flex justify-center gap-2">
                         <li class="page-item" id="prev-page-item">
                             <button class="note-btn note-btn-secondary rounded-md px-4 py-2" onclick="prevPage()" tabindex="-1" aria-disabled="true">Previous</button>
                         </li>
@@ -90,19 +101,19 @@
                 </nav>
             </section>
 
-            <section class="mb-6"> <!-- Reduced margin-bottom on section -->
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Rendered Note</h2>
-                <div id="note-content-html" class="bg-white shadow-md rounded p-6 overflow-hidden">
-                    <p class="text-gray-600 italic">Select a note from the list to render it here.</p>
+            <section>
+                <h2 class="text-2xl font-semibold text-gray-700 mb-6">Rendered Note</h2>
+                <div id="note-content-html" class="bg-white shadow-md rounded-lg p-8 overflow-hidden prose max-w-none">
+                    <p class="text-gray-600 italic" id="grammar-placeholder">Select a note from the list to render it here.</p>
                 </div>
             </section>
 
             <section>
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Grammar Check</h2>
+                <h2 class="text-2xl font-semibold text-gray-700 mb-6">Grammar Check</h2>
                 <div class="flex flex-col space-y-4">
-                    <div class="flex items-center space-x-2">
-                        <button id="grammar-check-button" 
-                                class="note-btn note-btn-primary flex items-center space-x-2" 
+                    <div class="flex items-center space-x-3">
+                        <button id="grammar-check-button"
+                                class="note-btn note-btn-primary flex items-center space-x-2"
                                 onclick="checkGrammar()">
                             <span>Check Grammar</span>
                             <span id="grammar-check-spinner" class="hidden">
@@ -114,7 +125,7 @@
                         </button>
                         <span id="grammar-status" class="text-sm"></span>
                     </div>
-                    <div id="grammar-check-results" class="bg-white shadow-md rounded p-6 min-h-[100px]">
+                    <div id="grammar-check-results" class="bg-white shadow-md rounded-lg p-8 min-h-[200px]">
                         <p class="text-gray-600 italic" id="grammar-placeholder">Grammar check results will appear here.</p>
                         <div id="grammar-results-content" class="hidden">
                             <!-- Results will be populated here -->
@@ -125,15 +136,12 @@
         </div>
     </div>
 
-    <footer class="mt-16 text-center text-gray-500 py-4 border-t border-gray-200"> <!-- Increased margin-top on footer and added border-top -->
+    <footer class="mt-20 text-center text-gray-500 py-6 border-t border-gray-200">
         <p>© 2025 Markdown Note App. Crafted with Tailwind CSS and Spring Boot.</p>
     </footer>
 </div>
 
-<script src="/simplemde.min.js"></script>
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
 <script src="/js/script.js"></script>
-<script th:inline="javascript">
-    var simplemde = new SimpleMDE({ element: document.getElementById('note-content') });
-</script>
 </body>
 </html>

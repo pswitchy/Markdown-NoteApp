@@ -150,4 +150,3 @@ After running the application, you can use the following endpoints:
 - Implement more sophisticated error handling and input validation.
 - Further enhance the UI/UX with more advanced features and interactions using a frontend framework (React, Vue, Angular).
 
-This `README.md` provides a basic overview of the Markdown Note-taking App. You can expand on it with more detailed information as needed for your project or audience.

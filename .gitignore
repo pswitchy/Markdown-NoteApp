@@ -1,0 +1,77 @@
+# Compiled class files
+target/
+bin/
+
+# Package Files (*.jar, *.war, etc.)
+*.jar
+*.war
+*.ear
+
+# IDE-specific files and folders
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.apt_generated/
+.factorypath/
+
+# Eclipse metadata
+.metadata/
+.recommenders/
+
+# NetBeans
+nbproject/
+
+# IntelliJ IDEA module files
+*.iml
+
+# Maven target folder
+target/
+
+# Gradle build folder
+build/
+.gradle
+gradle/
+gradlew
+gradlew.bat
+
+# Log files
+*.log
+*.jhist
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+._*
+
+# Temporary files created by developers
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+
+# Java class files
+*.class
+
+# Spring Boot DevTools restart
+spring-devtools.properties
+
+# H2 database files (if you are using file-based H2 and don't want to track data files)
+*.mv.db
+*.trace.db
+
+# Executable files (if any in the root)
+*.exe
+*.dll
+
+# Ignore dependency libraries if you were manually including them (not recommended with Maven)
+lib/
+
+# Configuration files that might contain sensitive data (use with caution, consider secure configuration management)
+# application.properties
+# application.yml

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+        <meta charset="UTF-8">
+    <title>Markdown Notes</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/simplemde.min.css"> <!-- Serve static resources from / -->
+    <link rel="stylesheet" href="/css/style.css">     <!-- Custom CSS if needed, create css/style.css in static folder -->
+    <style>
+        body { padding-top: 20px; }
+        #note-content-html { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+        .pagination { margin-top: 15px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Markdown Note-taking App</h1>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Create New Note</h2>
+        </div>
+        <div>
+            <a th:href="@{/logout}" class="btn btn-danger">Logout</a>
+        </div>
+    </div>
+
+
+    <form th:action="@{/notes/save-text}" method="post" id="note-form-text">
+        <div class="form-group">
+            <label for="note-title">Title:</label>
+            <input type="text" class="form-control" id="note-title" name="title" placeholder="Enter note title" required>
+        </div>
+        <div class="form-group">
+            <label for="note-tags">Tags (comma-separated):</label>
+            <input type="text" class="form-control" id="note-tags" name="tags" placeholder="Enter tags (optional)">
+        </div>
+        <div class="form-group">
+            <label for="note-content">Markdown Content:</label>
+            <textarea class="form-control" id="note-content" name="content" rows="5" placeholder="Enter markdown content"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Note (Text)</button>
+    </form>
+
+    <form th:action="@{/notes/save-file}" method="post" enctype="multipart/form-data" id="note-form-file" class="mt-3">
+        <div class="form-group">
+            <label for="note-file">Upload Markdown File:</label>
+            <input type="file" class="form-control-file" id="note-file" name="file" required>
+        </div>
+        <input type="hidden" id="file-note-title" name="title"> <!-- Title will be set dynamically -->
+        <input type="hidden" id="file-note-tags" name="tags">   <!-- Tags will be set dynamically -->
+        <button type="submit" class="btn btn-primary">Save Note (File)</button>
+    </form>
+
+
+    <h2 class="mt-4">List Notes</h2>
+    <div class="form-group">
+        <input type="text" class="form-control" id="search-term" placeholder="Search notes by title or content" oninput="searchNotes()">
+    </div>
+    <ul class="list-group" id="notes-list">
+        <li class="list-group-item d-flex justify-content-between align-items-center" th:each="note : ${notesPage.content}">
+            <a href="#" th:text="${note.title}" th:data-note-id="${note.id}" onclick="renderNoteHtml(this.getAttribute('data-note-id'))"></a>
+            <span class="badge badge-primary badge-pill ml-2" th:text="${note.tags ?: 'No tags'}"></span>
+        </li>
+    </ul>
+
+    <nav aria-label="Note pagination" class="pagination mt-2" th:if="${notesPage.totalPages > 1}">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${notesPage.isFirst()} ? 'disabled'">
+                <a class="page-link" th:href="@{/notes(page=${notesPage.number}-1, size=${notesPage.size}, search=${searchTerm})}" tabindex="-1" aria-disabled="true">Previous</a>
+            </li>
+            <li class="page-item disabled"><span class="page-link" th:text="${notesPage.number + 1}"></span></li>
+            <li class="page-item" th:classappend="${notesPage.isLast()} ? 'disabled'">
+                <a class="page-link" th:href="@{/notes(page=${notesPage.number}+1, size=${notesPage.size}, search=${searchTerm})}">Next</a>
+            </li>
+        </ul>
+    </nav>
+
+
+    <h2 class="mt-4">Rendered Note</h2>
+    <div id="note-content-html">
+        <!-- Rendered HTML will be displayed here -->
+        Select a note from the list to render it here.
+    </div>
+
+    <h2 class="mt-4">Grammar Check</h2>
+    <button class="btn btn-secondary" onclick="checkGrammar()">Check Grammar</button>
+    <div id="grammar-check-results" class="mt-2">
+        <!-- Grammar check results will be displayed here -->
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="/simplemde.min.js"></script> <!-- Serve static resources from / -->
+    <script src="/js/script.js"></script> <!-- Serve static resources from / -->
+    <script th:inline="javascript">
+        var simplemde = new SimpleMDE({ element: document.getElementById('note-content') }); // Initialize Markdown Editor
+    </script>
+</body>
+</html>

@@ -2,49 +2,40 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Register</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
-    <style>
-        body {
-            font-family: 'Nunito', sans-serif;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Markdown Notes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body class="bg-gray-100 h-screen flex items-center justify-center">
-<div class="container mx-auto px-4">
-    <div class="flex justify-center"> <!-- Centering the row -->
-        <div class="w-full max-w-md"> <!-- Limiting width of the card -->
-            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                <div class="card-header text-center text-xl font-bold mb-6">
-                    Register
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-box">
+            <h1>Create Account</h1>
+            <p class="auth-subtitle">Get started with Markdown Notes</p>
+
+            <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}">
+            </div>
+
+            <form th:action="@{/register}" method="post" class="auth-form" 
+                  th:object="${registrationRequest}">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" th:field="*{username}" required 
+                           class="form-control" placeholder="Choose a username">
                 </div>
-                <div class="card-body">
-                    <form th:action="@{/register}" th:object="${registrationRequest}" method="post">
-                        <div th:if="${errorMessage}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                            <span class="block sm:inline" th:text="${errorMessage}"></span>
-                        </div>
-                        <div class="mb-4">
-                            <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
-                            <input type="text" class="form-control" id="username" th:field="*{username}" required autofocus>
-                            <div class="text-red-500 text-xs italic" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
-                        </div>
-                        <div class="mb-6">
-                            <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-                            <input type="password" class="form-control" id="password" th:field="*{password}" required>
-                            <div class="text-red-500 text-xs italic" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <button type="submit" class="btn-primary">Register</button>
-                            <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800" th:href="@{/login}">
-                                Login here
-                            </a>
-                        </div>
-                    </form>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" th:field="*{password}" required 
+                           class="form-control" placeholder="Choose a password">
                 </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Already have an account? <a th:href="@{/login}">Sign In</a></p>
             </div>
         </div>
     </div>
-</div>
 </body>
 </html>

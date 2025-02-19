@@ -2,26 +2,15 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+        <meta charset="UTF-8">
     <title>Markdown Notes</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- SimpleMDE CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <link rel="stylesheet" href="/simplemde.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Add Font Awesome for the editor icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         body {
             font-family: 'Nunito', sans-serif;
-        }
-        /* Ensure proper editor height */
-        .editor-toolbar {
-            background-color: #f8fafc !important;
-            border: 1px solid #e2e8f0 !important;
-        }
-        .CodeMirror {
-            border: 1px solid #e2e8f0 !important;
-            min-height: 300px;
         }
     </style>
 </head>
@@ -41,6 +30,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 px-2 sm:px-0">
         <div class="space-y-8">
             <form th:action="@{/notes/save-text}" method="post" id="note-form-text" class="bg-white shadow-md rounded-lg px-6 sm:px-8 py-8">
+                <input type="hidden" id="note-id" name="id" value="">
                 <div class="mb-6">
                     <label for="note-title" class="block text-gray-700 text-sm font-bold mb-3">Title:</label>
                     <input type="text" class="form-control" id="note-title" name="title" placeholder="Enter note title" required>
@@ -49,16 +39,18 @@
                     <label for="note-tags" class="block text-gray-700 text-sm font-bold mb-3">Tags (optional, comma-separated):</label>
                     <input type="text" class="form-control" id="note-tags" name="tags" placeholder="Tags">
                 </div>
-                <div class="mb-8">
+                <div class.mb-8>
                     <label for="note-content" class="block text-gray-700 text-sm font-bold mb-3">Markdown Content:</label>
-                    <textarea class="form-control" id="note-content" name="content" placeholder="Enter markdown content"></textarea>
+                    <textarea class="form-control" id="note-content" name="content" rows="8" placeholder="Enter markdown content"></textarea>
                 </div>
-                <div class="flex items-center justify-end">
+                <div class="flex items-center justify-between">
                     <button type="submit" class="note-btn note-btn-primary">Save Note (Text)</button>
+                    <button type="button" class="note-btn note-btn-secondary" onclick="clearNoteInput()">New Note</button>
                 </div>
             </form>
 
-            <form th:action="@{/notes/save-file}" method="post" enctype="multipart/form-data" id="note-form-file" class="bg-white shadow-md rounded-lg px-6 sm:px-8 py-8">
+            <form th:action="@{/notes/save-file}" method="post" enctype="multipart/form-data" id="note-form-file" class="bg-white shadow-md rounded-lg px-6 sm:px-8 py-8 hidden">
+                <input type="hidden" id="file-note-id" name="id" value="">
                 <div class="mb-6">
                     <label for="note-title-file" class="block text-gray-700 text-sm font-bold mb-3">Title:</label>
                     <input type="text" class="form-control" id="note-title-file" name="title" placeholder="Note Title" required>
@@ -78,7 +70,7 @@
         </div>
 
         <div class="space-y-8">
-            <section>
+            <section class="mb-6">
                 <h2 class="text-2xl font-semibold text-gray-700 mb-6">List Notes</h2>
                 <div class="mb-6">
                     <input type="text" class="form-control" id="search-term" placeholder="Search notes" oninput="searchNotes()">
@@ -141,7 +133,10 @@
     </footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<script src="/simplemde.min.js"></script>
 <script src="/js/script.js"></script>
+<script th:inline="javascript">
+    var simplemde = new SimpleMDE({ element: document.getElementById('note-content') });
+</script>
 </body>
 </html>

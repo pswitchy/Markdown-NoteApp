@@ -2,357 +2,339 @@ let currentNoteId = null;
 let currentPage = 0;
 let currentSearchTerm = '';
 let simplemde;
+let editingNoteId = null;
 
-async function checkGrammar() {
-    const button = document.getElementById('grammar-check-button');
-    const spinner = document.getElementById('grammar-check-spinner');
-    const status = document.getElementById('grammar-status');
-    const results = document.getElementById('grammar-check-results');
-    const placeholder = document.getElementById('grammar-placeholder');
-    const resultsContent = document.getElementById('grammar-results-content');
-    
-    // Get the currently displayed note content
-    const noteContent = document.getElementById('note-content-html').innerText;
-    
-    if (!noteContent || noteContent.trim() === '') {
-        status.textContent = 'Please select a note first';
-        status.className = 'text-sm text-red-600';
+document.addEventListener('DOMContentLoaded', function() {
+    simplemde = new SimpleMDE({ element: document.getElementById('note-content') });
+    listNotes(0);
+});
+
+function showLoading(button) {
+    button.disabled = true;
+    button.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Saving...`;
+}
+
+function hideLoading(button, originalText) {
+    button.disabled = false;
+    button.textContent = originalText;
+}
+
+function saveNoteText() {
+    const title = document.getElementById('note-title').value;
+    const content = simplemde.value();
+    const tagsInput = document.getElementById('note-tags').value;
+    const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== ''); // Split and trim tags
+    const saveButton = document.querySelector('#note-form-text button[type="submit"]');
+    const originalButtonText = saveButton.textContent;
+    const noteId = editingNoteId;
+
+    showLoading(saveButton);
+
+    const url = noteId ? `/notes/save-text?id=${noteId}` : '/notes/save-text';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `title=${encodeURIComponent(title)}&content=${encodeURIComponent(content)}&tags=${encodeURIComponent(tags.join(','))}` // Join tags back to comma-separated string for request
+    })
+    .then(response => {
+        hideLoading(saveButton, originalButtonText);
+        if (response.redirected) {
+            window.location.href = '/login';
+            return;
+        }
+        if (response.ok) {
+            console.log('Note saved');
+            listNotes(currentPage, currentSearchTerm);
+            clearNoteInput();
+            editingNoteId = null;
+            showSuccessMessage('Note saved successfully!');
+        } else {
+            console.error('Error saving note:', response.statusText);
+            alert('Error saving note.');
+        }
+    });
+}
+
+
+function saveNoteFile() {
+    const fileInput = document.getElementById('note-file');
+    const title = document.getElementById('note-title-file').value;
+    const tagsInput = document.getElementById('note-tags-file').value;
+    const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== ''); // Split and trim tags
+    const file = fileInput.files[0];
+    const saveButton = document.querySelector('#note-form-file button[type="submit"]');
+    const originalButtonText = saveButton.textContent;
+    const noteId = editingNoteId;
+
+    if (!file) {
+        alert("Please select a file.");
         return;
     }
 
-    try {
-        // Show loading state
-        button.disabled = true;
-        spinner.classList.remove('hidden');
-        status.textContent = 'Checking grammar...';
-        status.className = 'text-sm text-blue-600';
-        placeholder.classList.remove('hidden');
-        resultsContent.classList.add('hidden');
+    document.getElementById('file-note-title').value = title;
+    document.getElementById('file-note-tags').value = tags;
 
-        const response = await fetch(`/notes/grammar-check`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ content: noteContent })
-        });
-
-        if (!response.ok) {
-            throw new Error('Grammar check failed');
-        }
-
-        const data = await response.json();
-        
-        // Hide placeholder and show results
-        placeholder.classList.add('hidden');
-        resultsContent.classList.remove('hidden');
-        
-        if (data.matches && data.matches.length > 0) {
-            // Format and display the grammar suggestions
-            resultsContent.innerHTML = formatGrammarResults(data.matches);
-            status.textContent = `Found ${data.matches.length} suggestion${data.matches.length === 1 ? '' : 's'}`;
-            status.className = 'text-sm text-yellow-600';
-        } else {
-            resultsContent.innerHTML = '<p class="text-green-600">No grammar issues found!</p>';
-            status.textContent = 'No issues found';
-            status.className = 'text-sm text-green-600';
-        }
-    } catch (error) {
-        console.error('Grammar check error:', error);
-        status.textContent = 'Error checking grammar';
-        status.className = 'text-sm text-red-600';
-        resultsContent.innerHTML = '<p class="text-red-600">Failed to check grammar. Please try again.</p>';
-    } finally {
-        // Reset button state
-        button.disabled = false;
-        spinner.classList.add('hidden');
+    const formData = new FormData(document.getElementById('note-form-file'));
+    formData.set('title', title);
+    formData.set('tags', tags.join(',')); // Join tags back to comma-separated string for request
+    if (noteId) {
+        formData.append('id', noteId);
     }
+
+    showLoading(saveButton);
+
+    const url = noteId ? `/notes/save-file?id=${noteId}` : '/notes/save-file';
+
+    fetch(url, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        hideLoading(saveButton, originalButtonText);
+        if (response.redirected) {
+            window.location.href = '/login';
+            return;
+        }
+        if (response.ok) {
+            console.log('Note saved from file');
+            listNotes(currentPage, currentSearchTerm);
+            clearNoteInput();
+            fileInput.value = '';
+            editingNoteId = null;
+            showSuccessMessage('Note saved from file successfully!');
+        } else {
+            console.error('Error saving note from file:', response.statusText);
+            alert('Error saving note from file.');
+        }
+    });
 }
 
-function formatGrammarResults(matches) {
-    return matches.map((match, index) => `
-        <div class="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-            <p class="text-yellow-800 font-medium">Suggestion ${index + 1}:</p>
-            <p class="text-gray-700 mt-1">${match.message}</p>
-            ${match.replacements && match.replacements.length > 0 ? `
-                <p class="text-gray-600 mt-2">Suggested replacement${match.replacements.length > 1 ? 's' : ''}:</p>
-                <ul class="list-disc list-inside mt-1">
-                    ${match.replacements.slice(0, 3).map(r => `
-                        <li class="text-blue-600">${r.value}</li>
-                    `).join('')}
-                </ul>
-            ` : ''}
-        </div>
-    `).join('');
-}
-
-function createNoteListItem(note) {
-    const listItem = document.createElement('li');
-    listItem.className = 'px-6 py-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-200 last:border-b-0';
-    listItem.addEventListener('click', () => renderNoteHtml(note.id));
-
-    const content = `
-        <div class="flex items-center justify-between">
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-medium text-gray-900 truncate">${note.title}</h3>
-                    ${note.fromFile ? `
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            File
-                        </span>
-                    ` : ''}
-                </div>
-                <div class="mt-1 flex items-center gap-2 flex-wrap">
-                    ${note.tags ? `
-                        <div class="flex flex-wrap gap-1">
-                            ${note.tags.split(',').map(tag => `
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                    ${tag.trim()}
-                                </span>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                    <span class="text-xs text-gray-500">
-                        ${new Date(note.createdAt).toLocaleDateString()}
-                    </span>
-                </div>
-            </div>
-            <svg class="h-5 w-5 text-gray-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-            </svg>
-        </div>
-    `;
-
-    listItem.innerHTML = content;
-    return listItem;
-}
 
 function listNotes(page = 0, searchTerm = '') {
     currentPage = page;
     currentSearchTerm = searchTerm;
-    const notesList = document.getElementById('notes-list');
-    
-    // Show loading state
-    notesList.innerHTML = `
-        <li class="px-6 py-4 text-center">
-            <div class="animate-spin inline-block h-6 w-6 border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
-            <p class="mt-2 text-sm text-gray-500">Loading notes...</p>
-        </li>
-    `;
-
     let url = `/notes?page=${page}&size=10`;
     if (searchTerm) {
         url += `&search=${encodeURIComponent(searchTerm)}`;
     }
 
     fetch(url)
-        .then(response => {
-            if (response.redirected) {
-                window.location.href = '/login';
-                return;
-            }
-            if (!response.ok) {
-                throw new Error('Failed to fetch notes');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const notes = data.content;
-            notesList.innerHTML = '';
-
-            if (notes.length === 0) {
-                notesList.innerHTML = `
-                    <li class="px-6 py-4 text-center text-gray-500">
-                        ${searchTerm ? 'No notes found matching your search.' : 'No notes yet. Create your first note!'}
-                    </li>
-                `;
-            } else {
-                notes.forEach(note => {
-                    const listItem = createNoteListItem(note);
-                    notesList.appendChild(listItem);
-                });
-            }
-
-            updatePagination(data);
-        })
-        .catch(error => {
-            console.error('Error fetching notes:', error);
-            notesList.innerHTML = `
-                <li class="px-6 py-4 text-center">
-                    <p class="text-red-500">Error loading notes.</p>
-                    <button onclick="listNotes(${page}, '${searchTerm}')" 
-                            class="mt-2 text-sm text-blue-500 hover:text-blue-700">
-                        Try again
-                    </button>
-                </li>
-            `;
-        });
+    .then(response => response.json())
+    .then(data => {
+        if (data.redirected) {
+            window.location.href = '/login';
+            return;
+        }
+        const notes = data.content;
+        const notesList = document.getElementById('notes-list');
+        notesList.innerHTML = '';
+        if (notes.length === 0) {
+            notesList.innerHTML = '<li class="list-group-item text-center py-4">No notes found.</li>';
+        } else {
+            notes.forEach(note => {
+                const listItem = createNoteListItem(note);
+                notesList.appendChild(listItem);
+            });
+        }
+        updatePagination(data);
+    });
 }
 
+function createNoteListItem(note) {
+    const listItem = document.createElement('li');
+    listItem.className = 'list-group-item px-4 py-3 hover:bg-gray-50 transition-colors duration-200 cursor-pointer flex justify-between items-center';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = note.title;
+    titleSpan.className = 'font-medium truncate cursor-pointer';
+    titleSpan.addEventListener('click', () => renderNoteHtml(note.id));
+
+    const tagsSpan = document.createElement('div'); // Changed to div for multiple tags
+    tagsSpan.className = 'inline-flex space-x-1'; // Flex container for tags
+    note.tags.forEach(tag => { // Loop through note.tags (now array of tag objects)
+        const singleTagSpan = document.createElement('span');
+        singleTagSpan.className = 'inline-flex items-center justify-center px-2 py-1 ml-2 text-xs font-bold leading-none text-blue-800 bg-blue-200 rounded-full';
+        singleTagSpan.textContent = tag.name; // Access tag.name
+        tagsSpan.appendChild(singleTagSpan);
+    });
+
+
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'space-x-2 flex';
+
+    const editButton = createActionButton('Edit', () => loadNoteForEdit(note.id));
+    const deleteButton = createActionButton('Delete', () => deleteNote(note.id));
+
+    actionsDiv.appendChild(editButton);
+    actionsDiv.appendChild(deleteButton);
+
+
+    listItem.appendChild(titleSpan);
+    listItem.appendChild(tagsSpan);
+    listItem.appendChild(actionsDiv);
+
+    return listItem;
+}
+
+function createActionButton(text, onClickHandler) {
+    const button = document.createElement('button');
+    button.textContent = text;
+    button.className = 'note-btn note-btn-secondary text-xs px-2 py-1';
+    button.addEventListener('click', onClickHandler);
+    return button;
+}
+
+
 function updatePagination(pageData) {
-    const currentPageNumber = document.getElementById('current-page-number');
+    const currentPageSpan = document.getElementById('current-page-number');
     const prevPageItem = document.getElementById('prev-page-item');
     const nextPageItem = document.getElementById('next-page-item');
 
-    currentPageNumber.textContent = pageData.number + 1;
-    
-    // Update Previous button
-    const prevButton = prevPageItem.querySelector('button');
-    prevButton.disabled = pageData.first;
-    prevPageItem.classList.toggle('opacity-50', pageData.first);
-    prevPageItem.classList.toggle('cursor-not-allowed', pageData.first);
-
-    // Update Next button
-    const nextButton = nextPageItem.querySelector('button');
-    nextButton.disabled = pageData.last;
-    nextPageItem.classList.toggle('opacity-50', pageData.last);
-    nextPageItem.classList.toggle('cursor-not-allowed', pageData.last);
-}
-
-function saveNoteText() {
-    const title = document.getElementById('note-title').value;
-    const content = simplemde.value();
-    const tags = document.getElementById('note-tags').value;
-    const saveButton = document.querySelector('#note-form-text button[type="submit"]');
-    const originalButtonText = saveButton.textContent;
-
-    showLoading(saveButton);
-
-    fetch('/notes/save-text', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `title=${encodeURIComponent(title)}&content=${encodeURIComponent(content)}&tags=${encodeURIComponent(tags)}`
-    })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = '/login';
-            return;
-        }
-        if (response.ok) {
-            return response.json(); // Expect a JSON response from the server
-        }
-        throw new Error('Error saving note');
-    })
-    .then(data => {
-        console.log('Note saved successfully:', data);
-        showSuccessMessage('Note saved successfully!');
-        clearNoteInput();
-        // Refresh the notes list
-        listNotes(0); // Reset to first page after saving
-    })
-    .catch(error => {
-        console.error('Error saving note:', error);
-        showErrorMessage('Failed to save note. Please try again.');
-    })
-    .finally(() => {
-        hideLoading(saveButton, originalButtonText);
-    });
-
-    return false; // Prevent form submission
-}
-
-function saveNoteFile() {
-    const fileInput = document.getElementById('note-file');
-    const title = document.getElementById('note-title-file').value;
-    const tags = document.getElementById('note-tags-file').value;
-    const saveButton = document.querySelector('#note-form-file button[type="submit"]');
-    const originalButtonText = saveButton.textContent;
-
-    if (!fileInput.files[0]) {
-        showErrorMessage('Please select a file.');
-        return false;
+    currentPageSpan.textContent = pageData.number + 1;
+    if (pageData.first) {
+        prevPageItem.classList.add('disabled', 'opacity-50', 'cursor-not-allowed');
+        prevPageItem.querySelector('button').setAttribute('disabled', true);
+    } else {
+        prevPageItem.classList.remove('disabled', 'opacity-50', 'cursor-not-allowed');
+        prevPageItem.querySelector('button').removeAttribute('disabled');
     }
 
-    const file = fileInput.files[0];
-    if (!file.name.toLowerCase().endsWith('.md')) {
-        showErrorMessage('Please select a markdown (.md) file.');
-        return false;
+    if (pageData.last) {
+        nextPageItem.classList.add('disabled', 'opacity-50', 'cursor-not-allowed');
+        nextPageItem.querySelector('button').setAttribute('disabled', true);
+    } else {
+        nextPageItem.classList.remove('disabled', 'opacity-50', 'cursor-not-allowed');
+        nextPageItem.querySelector('button').removeAttribute('disabled');
     }
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('title', title);
-    formData.append('tags', tags);
-
-    showLoading(saveButton);
-
-    fetch('/notes/save-file', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = '/login';
-            return;
-        }
-        if (!response.ok) {
-            throw new Error(response.statusText || 'Error saving note');
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Note saved from file:', data);
-        showSuccessMessage('Note saved successfully!');
-        clearNoteInput();
-        fileInput.value = ''; // Clear the file input
-        listNotes(0); // Reset to first page to show the new note
-    })
-    .catch(error => {
-        console.error('Error saving note from file:', error);
-        showErrorMessage(error.message || 'Failed to save note. Please try again.');
-    })
-    .finally(() => {
-        hideLoading(saveButton, originalButtonText);
-    });
-
-    return false;
 }
 
-function showErrorMessage(message) {
+function nextPage() {
+    listNotes(currentPage + 1, currentSearchTerm);
+}
+
+function prevPage() {
+    listNotes(currentPage - 1, currentSearchTerm);
+}
+
+
+function renderNoteHtml(noteId) {
+    currentNoteId = noteId;
+    const noteContentHtmlDiv = document.getElementById('note-content-html');
+    noteContentHtmlDiv.innerHTML = '<p class="text-gray-600 italic">Loading note content...</p>';
+
+    fetch(`/notes/${noteId}/html`)
+    .then(response => response.text())
+    .then(htmlContent => {
+        document.getElementById('note-content-html').innerHTML = `<div class="prose lg:prose-lg max-w-none">${htmlContent}</div>`;
+    });
+}
+
+
+function checkGrammar() {
+    if (!currentNoteId) {
+        alert("Please select a note to check grammar.");
+        return;
+    }
+
+    const grammarButton = document.querySelector('#grammar-check-button');
+    const originalButtonText = grammarButton.textContent;
+    showLoading(grammarButton);
+    document.getElementById('grammar-placeholder').classList.remove('hidden');
+    document.getElementById('grammar-results-content').classList.add('hidden');
+
+
+    fetch(`/notes/${currentNoteId}/grammar-check`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(grammarResponse => {
+        hideLoading(grammarButton, originalButtonText);
+        const grammarResultsDiv = document.getElementById('grammar-results-content');
+        const grammarPlaceholder = document.getElementById('grammar-placeholder');
+        grammarResultsDiv.innerHTML = '';
+        grammarPlaceholder.classList.add('hidden');
+        grammarResultsDiv.classList.remove('hidden');
+
+
+        if (grammarResponse && grammarResponse.matches && grammarResponse.matches.length > 0) {
+            let resultsHtml = "<h4 class='font-semibold mb-3'>Grammar Issues Found:</h4><ul class='list-disc pl-5'>";
+            grammarResponse.matches.forEach(match => {
+                resultsHtml += `<li class="mb-2"><b>${match.message}</b> Suggestion: ${match.replacements.join(', ') || 'No suggestion'} <br> <span class="text-sm text-gray-500">Rule: ${match.rule[0].description} (${match.rule[0].category.name})</span></li>`;
+            });
+            resultsHtml += "</ul>";
+            grammarResultsDiv.innerHTML = resultsHtml;
+        } else {
+            grammarResultsDiv.innerHTML = "<p class='text-green-500 font-medium'>No grammar issues found.</p>";
+        }
+    })
+    .catch(error => {
+        hideLoading(grammarButton, originalButtonText);
+        console.error("Error checking grammar:", error);
+        alert("Error checking grammar. Please try again later.");
+    });
+}
+
+function clearNoteInput() {
+    document.getElementById('note-title').value = '';
+    simplemde.value('');
+    document.getElementById('note-tags').value = '';
+    document.getElementById('note-file').value = '';
+    document.getElementById('note-title-file').value = '';
+    document.getElementById('note-tags-file').value = '';
+    editingNoteId = null;
+    document.getElementById('note-id').value = ''; // Clear note ID in form
+    document.getElementById('file-note-id').value = ''; // Clear note ID in file form
+
+}
+
+function searchNotes() {
+    const searchTerm = document.getElementById('search-term').value;
+    listNotes(0, searchTerm);
+}
+
+function showSuccessMessage(message) {
     const messageDiv = document.getElementById('success-message');
     messageDiv.textContent = message;
-    messageDiv.classList.remove('bg-green-200', 'text-green-800');
-    messageDiv.classList.add('bg-red-200', 'text-red-800', 'opacity-100');
     messageDiv.classList.remove('hidden');
+    messageDiv.classList.add('opacity-100'); // Fade in
     setTimeout(() => {
-        messageDiv.classList.add('hidden');
+        messageDiv.classList.remove('opacity-100'); // Fade out
+        messageDiv.classList.add('opacity-0', 'hidden');
     }, 3000);
 }
+function loadNoteForEdit(noteId) {
+    editingNoteId = noteId;
+    document.getElementById('note-id').value = noteId; // Set note ID in hidden input
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize SimpleMDE with proper toolbar configuration
-    simplemde = new SimpleMDE({
-        element: document.getElementById('note-content'),
-        spellChecker: false,
-        toolbar: ["bold", "italic", "heading", "|", 
-                 "quote", "code", "unordered-list", "ordered-list", "|",
-                 "link", "image", "|",
-                 "preview", "side-by-side", "fullscreen", "|",
-                 "guide"],
-        renderingConfig: {
-            singleLineBreaks: false,
-            codeSyntaxHighlighting: true,
-        },
-        status: ["lines", "words", "cursor"],
-        placeholder: "Write your markdown here...",
-    });
-    
-    // Add form submit event listeners
-    document.getElementById('note-form-text').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveNoteText();
-    });
+    fetch(`/notes/${noteId}/edit`)
+        .then(response => response.json())
+        .then(note => {
+            document.getElementById('note-title').value = note.title;
+            document.getElementById('note-tags').value = note.tags.map(tag => tag.name).join(', '); // Extract tag names and join
+            simplemde.value(note.content);
+            document.getElementById('note-title').focus();
+        });
+}
 
-    document.getElementById('note-form-file').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveNoteFile();
-    });
-
-    // Initial notes loading
-    listNotes(0);
-}); 
+function deleteNote(noteId) {
+    if (confirm('Are you sure you want to delete this note?')) {
+        fetch(`/notes/${noteId}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Note deleted:', noteId);
+                listNotes(currentPage, currentSearchTerm);
+                document.getElementById('note-content-html').innerHTML = '<p class="text-gray-600 italic">Select a note from the list to render it here.</p>';
+                currentNoteId = null;
+                showSuccessMessage('Note deleted successfully.');
+            } else {
+                console.error('Error deleting note:', response.statusText);
+                alert('Error deleting note.');
+            }
+        });
+    }
+}

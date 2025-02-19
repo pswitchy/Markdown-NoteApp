@@ -1,27 +1,29 @@
 package com.example.markdownnoteapp.entity;
 
+import com.example.markdownnoteapp.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Getter @Setter
 @NoArgsConstructor
-public class Tag {
+public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Enumerated(EnumType.STRING)
     @Column(unique = true, nullable = false)
-    private String name;
+    private UserRole name;
 
-    @ManyToMany(mappedBy = "tags") // Mapped by 'tags' in Note entity
-    private Set<Note> notes = new HashSet<>();
+    @ManyToMany(mappedBy = "roles")
+    private Set<User> users;
 
-    public Tag(String name) {
+    public Role(UserRole name) {
         this.name = name;
     }
 }

@@ -19,8 +19,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/notes")
@@ -45,9 +48,13 @@ public class NoteController {
             Model model
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Note> notePage = (searchTerm != null && !searchTerm.trim().isEmpty()) 
-                ? noteService.searchNotes(searchTerm, pageable)
-                : noteService.listNotes(pageable);
+        Page<Note> notePage;
+
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            notePage = noteService.searchNotes(searchTerm, pageable);
+        } else {
+            notePage = noteService.listNotes(pageable);
+        }
 
         model.addAttribute("notesPage", notePage);
         model.addAttribute("searchTerm", searchTerm);
@@ -59,11 +66,20 @@ public class NoteController {
     public String saveNoteText(
             @RequestParam("title") @NotBlank String title,
             @RequestParam("content") @NotBlank String markdownContent,
-            @RequestParam(value = "tags", required = false, defaultValue = "") String tags
+            @RequestParam(value = "tags", required = false, defaultValue = "") String tags,
+            @RequestParam(value = "id", required = false) String id
     ) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        noteService.saveNote(title, markdownContent, tags, username);
+        List<String> tagList = Arrays.asList(tags.split(",")).stream()
+                                        .map(String::trim)
+                                        .filter(tag -> !tag.isEmpty())
+                                        .collect(Collectors.toList()); // Split and trim tags
+        if (id != null && !id.isEmpty()) {
+            noteService.updateNote(id, title, markdownContent, tagList, username); // Pass tag list
+        } else {
+            noteService.saveNote(title, markdownContent, tagList, username); // Pass tag list
+        }
         return "redirect:/notes";
     }
 
@@ -71,16 +87,35 @@ public class NoteController {
     public String saveNoteFile(
             @RequestPart("file") MultipartFile file,
             @RequestParam("title") @NotBlank String title,
-            @RequestParam(value = "tags", required = false, defaultValue = "") String tags
+            @RequestParam(value = "tags", required = false, defaultValue = "") String tags,
+            @RequestParam(value = "id", required = false) String id
     ) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
+        List<String> tagList = Arrays.asList(tags.split(",")).stream()
+                                        .map(String::trim)
+                                        .filter(tag -> !tag.isEmpty())
+                                        .collect(Collectors.toList()); // Split and trim tags
         try {
-            noteService.saveNoteFromFile(file, title, tags, username);
+            if (id != null && !id.isEmpty()) {
+                noteService.updateNoteFromFile(id, file, title, tagList, username); // Pass tag list
+            } else {
+                noteService.saveNoteFromFile(file, title, tagList, username); // Pass tag list
+            }
         } catch (IOException e) {
             return "redirect:/notes?error=fileread";
         }
         return "redirect:/notes";
+    }
+
+    @GetMapping("/{id}/edit")
+    public ResponseEntity<Note> getNoteForEdit(@PathVariable String id) {
+        try {
+            Note note = noteService.getNoteById(id);
+            return ResponseEntity.ok(note);
+        } catch (NoteNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
 
@@ -98,10 +133,11 @@ public class NoteController {
     public ResponseEntity<GrammarCheckResponse> checkGrammar(@PathVariable String id) {
         try {
             String noteContent = noteService.getNoteContent(id);
-            GrammarCheckResponse response = grammarCheckService.checkGrammar(noteContent);
-            return response != null 
-                    ? ResponseEntity.ok(response) 
-                    : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            GrammarCheckResponse grammarCheckResponse = grammarCheckService.checkGrammar(noteContent);
+            if (grammarCheckResponse == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+            return ResponseEntity.ok(grammarCheckResponse);
         } catch (NoteNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
@@ -111,12 +147,19 @@ public class NoteController {
     @ResponseBody
     public ResponseEntity<List<String>> getNoteTags(@PathVariable String id) {
         try {
-            Note note = noteService.getNoteById(id);
-            return ResponseEntity.ok(
-                note.getTags() != null 
-                    ? List.of(note.getTags().split(",")) 
-                    : List.of()
-            );
+            List<String> tags = noteService.getNoteTagNames(id); // Fetch tag names, not comma-separated string
+            return ResponseEntity.ok(tags);
+        } catch (NoteNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteNote(@PathVariable String id) {
+        try {
+            noteService.deleteNote(id);
+            return ResponseEntity.noContent().build();
         } catch (NoteNotFoundException e) {
             return ResponseEntity.notFound().build();
         }

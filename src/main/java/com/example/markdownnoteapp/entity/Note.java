@@ -1,10 +1,18 @@
 package com.example.markdownnoteapp.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
+@Getter @Setter
+@NoArgsConstructor
 public class Note {
     @Id
     private String id;
@@ -12,70 +20,24 @@ public class Note {
     @Lob
     private String content;
     private LocalDateTime createdAt;
-    private String tags;
+
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE}) // Cascade for save/update tags
+    @JoinTable(
+            name = "notes_tags",
+            joinColumns = @JoinColumn(name = "note_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>(); // Use Set<Tag> for tags now
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Note() {
-        // Default constructor
-    }
-
-    public Note(String title, String content, String tags, User user) {
+    public Note(String title, String content, User user) {
         this.id = UUID.randomUUID().toString();
         this.title = title;
         this.content = content;
         this.createdAt = LocalDateTime.now();
-        this.tags = tags;
-        this.user = user;
-    }
-
-    // Explicit Getters and Setters
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getTags() {
-        return tags;
-    }
-
-    public void setTags(String tags) {
-        this.tags = tags;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
         this.user = user;
     }
 }

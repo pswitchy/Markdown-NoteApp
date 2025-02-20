@@ -140,7 +140,7 @@ After running the application, you can use the following endpoints:
 
 **(Note: You will need to be logged in to access the `/notes/**` endpoints.)**
 
-## Further Enhancements (Possible Future Features)
+## Enhancements (Implemented)
 
 - Implement a more robust user management system with roles and permissions.
 - Add features for editing and deleting notes.

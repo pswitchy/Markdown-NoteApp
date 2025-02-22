@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/model/GrammarCheckRule.java
 package com.example.markdownnoteapp.model;
 
 import lombok.Data;

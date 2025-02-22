@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/config/SecurityConfig.java
 package com.example.markdownnoteapp.config;
 
 import org.springframework.beans.factory.annotation.Autowired;

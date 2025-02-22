@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/controller/NoteController.java
 package com.example.markdownnoteapp.controller;
 
 import com.example.markdownnoteapp.entity.Note;

@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/service/UserService.java
 package com.example.markdownnoteapp.service;
 
 import com.example.markdownnoteapp.entity.Role;
@@ -68,8 +69,9 @@ public class UserService implements UserDetailsService {
             roleRepository.saveAll(List.of(adminRole, userRole));
 
             if (!userRepository.existsByUsername("admin")) {
-                User adminUser = new User("admin", passwordEncoder.encode("admin")); // Default admin password
+                User adminUser = new User("admin", passwordEncoder.encode("admin"));
                 adminUser.getRoles().add(adminRole);
+                adminUser.getRoles().add(userRole); // Assign both roles
                 userRepository.save(adminUser);
             }
         }

@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/entity/User.java
 package com.example.markdownnoteapp.entity;
 
 import jakarta.persistence.*;

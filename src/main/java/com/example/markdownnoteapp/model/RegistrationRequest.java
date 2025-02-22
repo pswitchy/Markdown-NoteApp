@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/model/RegistrationRequest.java
 package com.example.markdownnoteapp.model;
 
 import jakarta.validation.constraints.NotBlank;

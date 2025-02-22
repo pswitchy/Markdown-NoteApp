@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/exception/GrammarCheckException.java
 package com.example.markdownnoteapp.exception;
 
 public class GrammarCheckException extends RuntimeException {

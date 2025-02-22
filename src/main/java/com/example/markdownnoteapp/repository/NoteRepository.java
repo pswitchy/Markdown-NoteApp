@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/repository/NoteRepository.java
 package com.example.markdownnoteapp.repository;
 
 import com.example.markdownnoteapp.entity.Note;

@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/service/NoteService.java
 package com.example.markdownnoteapp.service;
 
 import com.example.markdownnoteapp.entity.Note;
@@ -7,15 +8,22 @@ import com.example.markdownnoteapp.exception.NoteNotFoundException;
 import com.example.markdownnoteapp.repository.NoteRepository;
 import com.example.markdownnoteapp.repository.TagRepository;
 import com.example.markdownnoteapp.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.hibernate.search.engine.search.predicate.dsl.BooleanPredicateClausesStep;
+import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-// import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,7 +33,10 @@ public class NoteService {
 
     private final NoteRepository noteRepository;
     private final UserRepository userRepository;
-    private final TagRepository tagRepository; // Inject TagRepository
+    private final TagRepository tagRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public NoteService(NoteRepository noteRepository, UserRepository userRepository, TagRepository tagRepository) {
@@ -38,7 +49,7 @@ public class NoteService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
         Note note = new Note(title, markdownContent, user);
-        setNoteTags(note, tagNames); // Set tags using helper method
+        setNoteTags(note, tagNames);
         return noteRepository.save(note);
     }
 
@@ -47,7 +58,7 @@ public class NoteService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
         String content = new String(file.getBytes());
         Note note = new Note(title, content, user);
-        setNoteTags(note, tagNames); // Set tags using helper method
+        setNoteTags(note, tagNames);
         return noteRepository.save(note);
     }
 
@@ -55,10 +66,8 @@ public class NoteService {
         Note note = getNoteById(id);
         note.setTitle(title);
         note.setContent(markdownContent);
-        note.getTags().clear(); // Clear existing tags before updating
-        setNoteTags(note, tagNames); // Set updated tags
-        // Do not update createdAt, but update on every edit if needed:
-        // note.setCreatedAt(LocalDateTime.now());
+        note.getTags().clear();
+        setNoteTags(note, tagNames);
         return noteRepository.save(note);
     }
 
@@ -66,9 +75,8 @@ public class NoteService {
         Note note = getNoteById(id);
         note.setTitle(title);
         note.setContent(new String(file.getBytes()));
-        note.getTags().clear(); // Clear existing tags before updating
-        setNoteTags(note, tagNames); // Set updated tags
-        // note.setCreatedAt(LocalDateTime.now());
+        note.getTags().clear();
+        setNoteTags(note, tagNames);
         return noteRepository.save(note);
     }
 
@@ -78,13 +86,12 @@ public class NoteService {
                     .map(tagName -> tagRepository.findByName(tagName)
                             .orElseGet(() -> {
                                 Tag newTag = new Tag(tagName);
-                                return tagRepository.save(newTag); // Save new tag if not found
+                                return tagRepository.save(newTag);
                             }))
                     .collect(Collectors.toSet());
             note.getTags().addAll(tags);
         }
     }
-
 
     public Page<Note> listNotes(Pageable pageable) {
         String username = getCurrentUsername();
@@ -100,19 +107,60 @@ public class NoteService {
 
     public Note getNoteById(String noteId) {
         String username = getCurrentUsername();
-        @SuppressWarnings("unused")
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        return noteRepository.findById(noteId)
+        return noteRepository.findByIdAndUser(noteId, user)
                 .orElseThrow(() -> new NoteNotFoundException("Note not found with id: " + noteId));
     }
 
+    @Transactional
     public Page<Note> searchNotes(String searchTerm, Pageable pageable) {
         String username = getCurrentUsername();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-        return noteRepository.searchNotesByUser(searchTerm, user, pageable);
+
+        SearchSession searchSession = Search.session(entityManager);
+
+        List<Note> results = searchSession.search(Note.class)
+                .where(f -> f.bool()
+                        .must(f.match().field("userId").matching(user.getId()))
+                        .must(f.bool().with(b -> {
+                            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                                b.should(f.match().field("title").matching(searchTerm).fuzzy(2));
+                                b.should(f.match().field("content").matching(searchTerm).fuzzy(2));
+                                b.minimumShouldMatch(1);
+                            } else {
+                                b.must(f.matchAll());
+                            }
+                        })))
+                .sort(f -> f.field("createdAt").desc())
+                .fetchHits((int) pageable.getOffset(), pageable.getPageSize());
+
+        long totalHits = searchSession.search(Note.class)
+                .where(f -> f.bool()
+                        .must(f.match().field("userId").matching(user.getId()))
+                        .must(f.bool().with(b -> {
+                            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                                b.should(f.match().field("title").matching(searchTerm).fuzzy(2));
+                                b.should(f.match().field("content").matching(searchTerm).fuzzy(2));
+                                b.minimumShouldMatch(1);
+                            }
+                            return b;
+                        }))
+                .fetchTotalHitCount();
+
+        return new PageImpl<>(results, pageable, totalHits);
+    }
+
+    @Transactional
+    public void reindexAllNotes() {
+        try {
+            Search.session(entityManager).massIndexer(Note.class).startAndWait();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Mass indexing interrupted", e);
+        }
     }
 
     public void deleteNote(String noteId) {
@@ -123,10 +171,9 @@ public class NoteService {
     public List<String> getNoteTagNames(String noteId) {
         Note note = getNoteById(noteId);
         return note.getTags().stream()
-                .map(Tag::getName) // Get tag names
+                .map(Tag::getName)
                 .collect(Collectors.toList());
     }
-
 
     private String getCurrentUsername() {
         return org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();

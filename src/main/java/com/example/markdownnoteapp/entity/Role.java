@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/entity/Role.java
 package com.example.markdownnoteapp.entity;
 
 import com.example.markdownnoteapp.enums.UserRole;

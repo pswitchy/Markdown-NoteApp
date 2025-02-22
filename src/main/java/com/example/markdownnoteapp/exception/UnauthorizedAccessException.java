@@ -1,3 +1,4 @@
+// java/com/example/markdownnoteapp/exception/UnauthorizedAccessException.java
 package com.example.markdownnoteapp.exception;
 
 public class UnauthorizedAccessException extends RuntimeException {

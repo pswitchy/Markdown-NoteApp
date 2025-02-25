@@ -9,6 +9,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextFi
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 // Updated imports for Hibernate Search 7.1.0
 // import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
@@ -58,6 +59,7 @@ public class Note {
     private User user;
 
     @GenericField(searchable = Searchable.YES)
+    @IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "user")))
     public Long getUserId() {
         return user != null ? user.getId() : null;
     }

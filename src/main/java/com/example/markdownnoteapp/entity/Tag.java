@@ -1,4 +1,3 @@
-// java/com/example/markdownnoteapp/entity/Tag.java
 package com.example.markdownnoteapp.entity;
 
 import jakarta.persistence.*;
@@ -10,16 +9,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(unique = true, nullable = false)
     private String name;
 
-    @ManyToMany(mappedBy = "tags") // Mapped by 'tags' in Note entity
+    @ManyToMany(mappedBy = "tags")
     private Set<Note> notes = new HashSet<>();
 
     public Tag(String name) {

@@ -9,6 +9,11 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextFi
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+// Updated imports for Hibernate Search 7.1.0
+// import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.AssociationInverseSide;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -16,7 +21,8 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @Indexed
 public class Note {
@@ -41,9 +47,14 @@ public class Note {
     @IndexedEmbedded
     private Set<Tag> tags = new HashSet<>();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    @IndexedEmbedded(includePaths = {"id"})
+    @IndexedEmbedded(includePaths = {"username"})
+    @AssociationInverseSide(
+        inversePath = @ObjectPath(
+            @PropertyValue(propertyName = "notes")
+        )
+    )
     private User user;
 
     @GenericField(searchable = Searchable.YES)

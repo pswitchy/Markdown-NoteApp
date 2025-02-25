@@ -1,4 +1,3 @@
-// java/com/example/markdownnoteapp/service/NoteService.java
 package com.example.markdownnoteapp.service;
 
 import com.example.markdownnoteapp.entity.Note;
@@ -10,8 +9,8 @@ import com.example.markdownnoteapp.repository.TagRepository;
 import com.example.markdownnoteapp.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.hibernate.search.engine.search.predicate.dsl.BooleanPredicateClausesStep;
-import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
+
+import org.hibernate.Session;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,34 +119,39 @@ public class NoteService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        SearchSession searchSession = Search.session(entityManager);
+        SearchSession searchSession = Search.session((Session) entityManager);
 
         List<Note> results = searchSession.search(Note.class)
-                .where(f -> f.bool()
-                        .must(f.match().field("userId").matching(user.getId()))
-                        .must(f.bool().with(b -> {
-                            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-                                b.should(f.match().field("title").matching(searchTerm).fuzzy(2));
-                                b.should(f.match().field("content").matching(searchTerm).fuzzy(2));
-                                b.minimumShouldMatch(1);
-                            } else {
-                                b.must(f.matchAll());
-                            }
-                        })))
+                .where(f -> {
+                    var boolPredicate = f.bool()
+                            .must(f.match().field("userId").matching(user.getId()));
+                    
+                    if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                        boolPredicate.should(f.match().field("title").matching(searchTerm).fuzzy(2))
+                                    .should(f.match().field("content").matching(searchTerm).fuzzy(2));
+                    } else {
+                        boolPredicate.must(f.matchAll());
+                    }
+                    
+                    return boolPredicate;
+                })
                 .sort(f -> f.field("createdAt").desc())
                 .fetchHits((int) pageable.getOffset(), pageable.getPageSize());
 
         long totalHits = searchSession.search(Note.class)
-                .where(f -> f.bool()
-                        .must(f.match().field("userId").matching(user.getId()))
-                        .must(f.bool().with(b -> {
-                            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-                                b.should(f.match().field("title").matching(searchTerm).fuzzy(2));
-                                b.should(f.match().field("content").matching(searchTerm).fuzzy(2));
-                                b.minimumShouldMatch(1);
-                            }
-                            return b;
-                        }))
+                .where(f -> {
+                    var boolPredicate = f.bool()
+                            .must(f.match().field("userId").matching(user.getId()));
+                    
+                    if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                        boolPredicate.should(f.match().field("title").matching(searchTerm).fuzzy(2))
+                                    .should(f.match().field("content").matching(searchTerm).fuzzy(2));
+                    } else {
+                        boolPredicate.must(f.matchAll());
+                    }
+                    
+                    return boolPredicate;
+                })
                 .fetchTotalHitCount();
 
         return new PageImpl<>(results, pageable, totalHits);
@@ -156,7 +160,7 @@ public class NoteService {
     @Transactional
     public void reindexAllNotes() {
         try {
-            Search.session(entityManager).massIndexer(Note.class).startAndWait();
+            Search.session((Session) entityManager).massIndexer(Note.class).startAndWait();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Mass indexing interrupted", e);

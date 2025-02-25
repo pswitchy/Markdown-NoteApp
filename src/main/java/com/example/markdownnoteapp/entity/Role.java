@@ -1,4 +1,3 @@
-// java/com/example/markdownnoteapp/entity/Role.java
 package com.example.markdownnoteapp.entity;
 
 import com.example.markdownnoteapp.enums.UserRole;
@@ -10,7 +9,8 @@ import lombok.Setter;
 import java.util.Set;
 
 @Entity
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 public class Role {
     @Id
